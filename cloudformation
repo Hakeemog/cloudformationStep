@@ -1,0 +1,54 @@
+ Create a new ALB with listerners for 443 and 444 following the existing pattern
+* Target groups names must be unique across region (hint: add 2 to the name)
+* ECS service placement strategy should be only AZ spread
+* In the listerner rule for CampaignsBuilder service specify HostHeaderConfig in addition
+  to Fieldsfor campaigns-api and campaigns-api-cache in CampaignsBuilder service
+        HostHeaderConfig:
+            Values:
+                -   campaigns-api.adimo.co
+                -   campaigns-api-cache.adimo.co
+* Create CodeDeploy Application and Deployment Group that points to the ECS Cluster, Service, LoadBalancer listerners
+    - CodeDeploy Application name format => AppECS-AdimoWindows2-<ServiceName>
+    - CodeDeploy Deployment group name format => DgpECS-AdimoWindows2-<ServiceName>
+    - The above steps will be performed manually in the console.
+* For the Github Repos you just need to update the CLUSTER_NAME env variable to "AdimoWindows2" in the master/dev branch
+* When creating services use the cluster Capacity Provider strategy with the following items
+    - 
+      Base: 0
+      CapacityProvider: <CapacityProvider>
+      Weight: 1
+Steps:
+ * Update Task Definition
+    - Compare active task def. with CF scripts
+    - Update Env. variables
+    - Update Resource requirements - CPU & Memory
+ * Search for AdimoApplicationName and do the following
+    - Add 2 to AdimoWindows occurrences
+    - Add 2 to tg name
+ * Search for AdimoWindows
+    - Change to AdimoWindows2
+ * Update CapacityProvider for the ECS Service
+    - Add CapacityProvider strategy
+    - Remove EC2 Launch type
+    - Update Placement strategy to AZ spread only
+ *  Update Parameters
+    - Remove LB related Parameters
+    - Add ServiceDesiredCount and use it in ECSService Resource
+ * Update AutoScaling Scalable Target
+    - Check active service AutoScaling Capacity
+ *  Deploy Cloudformation stack
+    - Update the services parmaters with real actual Values
+Services Parameters
+  * ImageName: campaign-builder
+  * AdimoApplicationName: CampaignBuilder
+  * ApplicationDomainName: build.adimo.co
+  * StackName: CampaignBuilder2
+Parameters:
+    
+    SSMListenerArn443: arn:aws:elasticloadbalancing:eu-west-1:922529844388:listener/app/AdimoProductionContainers2/f1e43186fb633d4a/aed862606fda4dc7
+    SSMListenerArn444: arn:aws:elasticloadbalancing:eu-west-1:922529844388:listener/app/AdimoProductionContainers2/f1e43186fb633d4a/de13a7f70ee6bf14
+Tags
+  * Environment: Production
+  * Service: <ServiceName>
+Test LinkShortener
+    curl -L -k -H "Host: get.adimo.co" http://AdimoProductionContainers2-2078288062.eu-west-1.elb.amazonaws.com/ecs
